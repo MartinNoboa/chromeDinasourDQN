@@ -1,17 +1,22 @@
-from mss import mss
-from matplotlib import pyplot as plt
-from gym import Env
-from gym.spaces import Box, Discrete
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common import env_checker
 import os 
 import time
 import numpy as np
 import pydirectinput as pyinput
 import pytesseract as pytess
 import cv2
+from mss import mss
+from matplotlib import pyplot as plt
+from gym import Env
+from gym.spaces import Box, Discrete
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common import env_checker
+from stable_baselines3 import DQN
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 
 pytess.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+CP = './train/'
+LOG = './logs/'
 
 class dinasour(Env):
     def __init__(self):
@@ -61,13 +66,26 @@ class dinasour(Env):
         #add ocr to extract game score
         pass
 
-  
+class TrainAndLoggingCallback(BaseCallback):
+
+    def __init__(self, check_freq, save_path, verbose=1):
+        super(TrainAndLoggingCallback, self).__init__(verbose)
+        self.check_freq = check_freq
+        self.save_path = save_path
+
+    def _init_callback(self):
+        if self.save_path is not None:
+            os.makedirs(self.save_path, exist_ok=True)
+
+    def _on_step(self):
+        if self.n_calls % self.check_freq == 0:
+            model_path = os.path.join(self.save_path, 'best_model_{}'.format(self.n_calls))
+            self.model.save(model_path)
+
+        return True
+
+
 dino = dinasour()
-for episode in range(10): 
-    obs = dino.reset()
-    done = False  
-    total_reward   = 0
-    while not done: 
-        obs, reward,  done, info =  dino.step(dino.action_space.sample())
-        total_reward  += reward
-    print('Total Reward for episode {} is {}'.format(episode, total_reward))  
+callback = TrainAndLoggingCallback(check_freq=1000, save_path=CP)
+model = DQN('CnnPolicy', dino, tensorboard_log=LOG, verbose=1, buffer_size=120000, learning_starts=500)
+model.learn(total_timesteps=30000, callback=callback)
