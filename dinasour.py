@@ -17,6 +17,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 pytess.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 CP = './train/'
 LOG = './logs/'
+N = 10
 
 class dinasour(Env):
     def __init__(self):
@@ -85,7 +86,20 @@ class TrainAndLoggingCallback(BaseCallback):
         return True
 
 
-dino = dinasour()
+rex = dinasour()
 callback = TrainAndLoggingCallback(check_freq=1000, save_path=CP)
-model = DQN('CnnPolicy', dino, tensorboard_log=LOG, verbose=1, buffer_size=120000, learning_starts=500)
-model.learn(total_timesteps=30000, callback=callback)
+model = DQN('CnnPolicy', rex, tensorboard_log=LOG, verbose=1, buffer_size=120000, learning_starts=500)
+# model.learn(total_timesteps=30000, callback=callback)
+
+model.load('train/best_model_30000') 
+# model.load('train/best_model_16000') 
+
+for episode in range(N): 
+    obs = rex.reset()
+    done = False
+    total_reward = 0
+    while not done: 
+        action, _ = model.predict(obs)
+        obs, reward, done, info = rex.step(int(action))
+        total_reward += reward
+    print('Reward for episode {} is {}'.format(episode, total_reward))
