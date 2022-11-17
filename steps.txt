@@ -1,0 +1,15 @@
+# for future reference and build the jupyter notebook
+
+#install pytorch according to documentation
+pip3 install torch torchvision torchaudio
+
+#install stable bsaeline framework for RL 
+pip install stable-baselines[mpi]
+
+#opencv for image processing
+#install pydirectinput to have direct commands to interface
+pip install pydirectinput
+#install pytesseract for OCR
+pip install pytesseract
+#install mss for screenshots
+pip install mss 
